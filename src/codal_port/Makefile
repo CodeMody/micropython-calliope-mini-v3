@@ -86,6 +86,7 @@ SRC_C += \
 	microbit_spi.c \
 	microbit_uart.c \
 	microbitfs.c \
+	modbluetooth_glue.c \
 	modantigravity.c \
 	modaudio.c \
 	modlog.c \
@@ -112,6 +113,7 @@ SRC_C += \
 	$(abspath $(LOCAL_LIB_DIR)/sam/render.c) \
 	$(abspath $(LOCAL_LIB_DIR)/sam/sam.c) \
 	$(abspath $(LOCAL_LIB_DIR)/sam/debug.c) \
+	$(abspath $(TOP)/extmod/modbluetooth.c) \
 
 SRC_O += \
 	shared/runtime/gchelper_thumb2.o \
