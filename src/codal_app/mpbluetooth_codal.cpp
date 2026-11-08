@@ -29,6 +29,11 @@
 
 using namespace codal;
 
+// The tree declares the global uBit only in its Ticker/Timeout/InterruptIn
+// headers; spell it here as those do (the utility service takes the bus as a
+// constructor parameter for the same reason - see MicroBitUtilityService.h).
+extern codal::MicroBit uBit;
+
 // Our own message-bus id; listeners are per-object so the number only has to
 // not collide with another listener registered BY THIS OBJECT. Event values
 // mirror the MPBT_CODAL_EVT_* tags.
@@ -77,10 +82,9 @@ class DigiballBleService : public MicroBitBLEService
 {
 public:
 
-    DigiballBleService()
+    DigiballBleService(EventModel &_messageBus) :
+        messageBus(_messageBus)
     {
-        messageBus = &uBit.messageBus;
-
         memclr(characteristicValue, sizeof(characteristicValue));
 
         // The runtime-proven construction order, verbatim from the pattern this
@@ -263,7 +267,9 @@ public:
         return -1;
     }
 
-    EventModel *messageBus;
+    EventModel &messageBus;
+    uint8_t peer_be[6];      // public for the bridge's peer query
+    uint8_t peer_type;
 
 private:
 
@@ -273,8 +279,6 @@ private:
 
     uint16_t last_conn;
     uint32_t last_param;
-    uint8_t peer_be[6];
-    uint8_t peer_type;
 };
 
 
@@ -296,8 +300,9 @@ int mpbt_codal_start(void)
 
     // the createShared pattern, run once — at this call the SoftDevice is up
     // (CODAL boot did that), exactly as it is when the utility service builds
-    // its service on demand.
-    digiball_service = new DigiballBleService();
+    // its service on demand. The bus argument mirrors the utility service's
+    // createShared call site (uBit.messageBus as an EventModel& reference).
+    digiball_service = new DigiballBleService(uBit.messageBus);
     if (digiball_service == NULL)
         return -1;
 
@@ -311,7 +316,9 @@ void mpbt_codal_stop(void)
     // goes quiet. Nothing else to undo.
     if (digiball_started && digiball_service)
     {
-        digiball_service->messageBus->ignore(DIGIBALL_BLE_BUS_ID, MICROBIT_EVT_ANY,
+        // messageBus is a reference member (EventModel&), matching the utility
+        // service — so dot access here, as its listen/ignore helpers use.
+        digiball_service->messageBus.ignore(DIGIBALL_BLE_BUS_ID, MICROBIT_EVT_ANY,
             digiball_service, &DigiballBleService::onBusEvent);
     }
     digiball_started = false;
