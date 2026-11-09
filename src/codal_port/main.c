@@ -73,7 +73,14 @@ void mp_main(void) {
                 microbit_pyexec_file(main_py);
             } else {
                 // from calliopemini import *
-                mp_import_all(mp_import_name(MP_QSTR_calliopemini, mp_const_empty_tuple, MP_OBJ_NEW_SMALL_INT(0)));            }
+                mp_import_all(mp_import_name(MP_QSTR_calliopemini, mp_const_empty_tuple, MP_OBJ_NEW_SMALL_INT(0)));
+                #if MICROPY_MODULE_FROZEN
+                // The manifest can carry the program inside the image. A frozen module is
+                // not a file, so mp_import_stat above cannot see it: run it here, the
+                // documented frozen-module path (same parse/compile/execute, same tracebacks).
+                pyexec_frozen_module(MAIN_PY, true);
+                #endif
+            }
         }
 
         for (;;) {
