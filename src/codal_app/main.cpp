@@ -54,7 +54,13 @@ int main() {
 
     // Reconfigure the radio IRQ to our custom handler.
     // This must be done after uBit.init() in case BLE pairing mode is activated there.
+#if !CONFIG_ENABLED(MICROBIT_BLE_ENABLED)
+    // With the SoftDevice up, RADIO_IRQn belongs to the stack: replacing the
+    // vector corrupts the radio state machine, so packet radio stays off then.
     NVIC_SetVector(RADIO_IRQn, (uint32_t)microbit_radio_irq_handler);
+#else
+    (void)microbit_radio_irq_handler;
+#endif
 
     // As well as configuring a larger RX buffer, this needs to be called so it
     // calls Serial::initialiseRx, to set up interrupts.
